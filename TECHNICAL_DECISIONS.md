@@ -1,0 +1,24 @@
+# Technical decisions
+- **FastAPI + PyMongo (sync)**: simple, matches your existing PyMongo setup; sync handlers run in a threadpool.
+- **bcrypt + PyJWT**: standard, small. Tokens typed `access` / `refresh`.
+- **Sync PDF extraction in the request**: fine for now; move to a background worker before
+  adding embeddings (heavy model loading must not happen per request).
+- **404 for foreign resources**: avoids leaking that an ID exists.
+- **No AWS anywhere.** Storage is local; Supabase is a planned optional provider.
+- **mongomock for tests**: fast, no server needed, but weaker than a real DB (see PROGRESS.md).
+- **FAISS flat index, per user**: exact search is simple and fast at this scale; per-user files make isolation and deletion trivial.
+- **RRF for hybrid**: BM25 and cosine scores aren't comparable, ranks are.
+- **BM25 by hand instead of a library**: about 20 lines, easier to explain in a viva, and no extra dependency.
+- **Embedder behind an interface**: lets tests run offline and lets you swap models.
+- **Gemini over raw REST (httpx)**: one fewer SDK, trivially mockable in tests. Key sent in a header, never the URL.
+- **Structured JSON from the model + server-side validation**: the model can't smuggle in citations we didn't retrieve.
+- **Extractive fallback**: assistant degrades gracefully (and honestly) without any API key.
+- **Relevance floor on the semantic leg**: kNN always returns neighbours; without a floor the abstain path is dead code.
+- **Sync LLM call in a threadpool endpoint**: simple; streaming and a worker queue come later.
+- **One extraction call per paper (not per field)**: 10x fewer calls, and a paper's text never mixes with another's.
+- **Whole paper in context when short, retrieval when long**: avoids retrieval misses on small papers; bounded by a char budget.
+- **Observations must cite table cells**: ties every comparative claim to something already citation-checked.
+- **Cluster sentences, not papers, for gaps**: shared limitations are sentence-level phenomena.
+- **Evidence strength = distinct papers**: repetition within one paper is not corroboration.
+- **LLM only words the gap, never finds it**: discovery is deterministic and reproducible; the model's job is limited and checkable.
+- **scikit-learn over heavier topic models**: NMF/TF-IDF run in milliseconds on CPU and are easy to explain.

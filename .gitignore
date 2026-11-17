@@ -1,0 +1,14 @@
+venv/
+.venv/
+backend/venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+storage/local/*
+!storage/local/.gitkeep
+storage/vector_index/
+node_modules/
+frontend/dist/
+.pytest_cache/
